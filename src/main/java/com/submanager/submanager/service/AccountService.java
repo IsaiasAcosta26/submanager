@@ -1,7 +1,7 @@
 package com.submanager.submanager.service;
 
 import com.submanager.submanager.dto.record.AccountDto;
-import com.submanager.submanager.model.entity.Account;
+import com.submanager.submanager.mapper.AccountMapper;
 import com.submanager.submanager.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,25 +11,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccountService {
 
     private final AccountRepository repo;
+    private final AccountMapper mapper;
 
-    public AccountService(AccountRepository repo) {
+    public AccountService(AccountRepository repo, AccountMapper mapper) {
         this.repo = repo;
+        this.mapper = mapper;
     }
 
     public AccountDto create(AccountDto dto) {
-        if (repo.existsByEmail(dto.email())) {
-            throw new IllegalArgumentException("email ya existe");
-        }
-        var acc = new Account();
-        acc.setName(dto.name());
-        acc.setEmail(dto.email());
-        repo.save(acc);
-        return new AccountDto(acc.getId(), acc.getName(), acc.getEmail());
+        if (repo.existsByEmail(dto.email())) throw new IllegalArgumentException("email ya existe");
+        var entity = mapper.toEntity(dto);
+        repo.save(entity);
+        return mapper.toDto(entity);
     }
 
     @Transactional(readOnly = true)
     public AccountDto get(Long id) {
         var a = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("account no encontrado"));
-        return new AccountDto(a.getId(), a.getName(), a.getEmail());
+        return mapper.toDto(a);
     }
 }
