@@ -1,7 +1,7 @@
 package com.submanager.submanager.controller;
 
 import com.submanager.submanager.common.PageResponse;
-import com.submanager.submanager.dto.SubscriptionDto;
+import com.submanager.submanager.dto.record.SubscriptionDto;
 import com.submanager.submanager.model.enums.BillingCycle;
 import com.submanager.submanager.model.enums.SubscriptionStatus;
 import com.submanager.submanager.service.SubscriptionService;
@@ -20,10 +20,7 @@ import java.util.List;
 public class SubscriptionController {
 
     private final SubscriptionService service;
-
-    public SubscriptionController(SubscriptionService service) {
-        this.service = service;
-    }
+    public SubscriptionController(SubscriptionService service) { this.service = service; }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -47,7 +44,7 @@ public class SubscriptionController {
         service.delete(id);
     }
 
-    // -------- LISTADO PAGINADO + FILTROS (GET con query params) --------
+    // -------- LISTADO PAGINADO + FILTROS --------
     @GetMapping
     public PageResponse<SubscriptionDto> search(
             @RequestParam Long accountId,
@@ -59,6 +56,9 @@ public class SubscriptionController {
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate renewalFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate renewalTo,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) List<Long> tagIds,
+            @RequestParam(defaultValue = "any") String tagsMode, // any | all
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size,
             @RequestParam(defaultValue = "nextRenewalDate") String sortBy,
@@ -67,22 +67,25 @@ public class SubscriptionController {
         return service.search(
                 accountId, provider, nameContains, status, billingCycle,
                 minPrice, maxPrice, renewalFrom, renewalTo,
+                categoryId, tagIds, tagsMode,
                 page, size, sortBy, direction
         );
     }
 
     // -------- INSIGHTS --------
     @GetMapping("/insights/{accountId}/monthly-total")
-    public java.math.BigDecimal monthlyTotal(@PathVariable Long accountId) {
+    public BigDecimal monthlyTotal(@PathVariable Long accountId) {
         return service.monthlyTotal(accountId);
     }
 
+    // **ÚNICO** endpoint para upcoming: status es opcional
     @GetMapping("/insights/{accountId}/upcoming")
     public List<SubscriptionDto> upcoming(
             @PathVariable Long accountId,
-            @RequestParam(defaultValue = "14") @Min(1) int days
+            @RequestParam(defaultValue = "14") @Min(1) int days,
+            @RequestParam(required = false) SubscriptionStatus status
     ) {
-        return service.upcomingRenewals(accountId, days);
+        return service.upcomingRenewals(accountId, days, status);
     }
 
     @GetMapping("/insights/{accountId}/suggestions")

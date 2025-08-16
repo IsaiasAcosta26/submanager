@@ -1,6 +1,6 @@
 package com.submanager.submanager.controller;
 
-import com.submanager.submanager.dto.AccountDto;
+import com.submanager.submanager.dto.record.AccountDto;
 import com.submanager.submanager.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

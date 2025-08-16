@@ -1,6 +1,6 @@
 package com.submanager.submanager.service;
 
-import com.submanager.submanager.dto.AccountDto;
+import com.submanager.submanager.dto.record.AccountDto;
 import com.submanager.submanager.model.entity.Account;
 import com.submanager.submanager.repository.AccountRepository;
 import org.springframework.stereotype.Service;

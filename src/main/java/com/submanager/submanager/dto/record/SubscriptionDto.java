@@ -1,4 +1,4 @@
-package com.submanager.submanager.dto;
+package com.submanager.submanager.dto.record;
 
 import com.submanager.submanager.model.enums.BillingCycle;
 import com.submanager.submanager.model.enums.SubscriptionStatus;
@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 public record SubscriptionDto(
         Long id,
@@ -22,5 +23,7 @@ public record SubscriptionDto(
         LocalDate nextRenewalDate,
         SubscriptionStatus status,
         LocalDate lastActivityDate,
-        @Size(max = 255) String notes
+        @Size(max = 255) String notes,
+        Long categoryId,
+        List<Long> tagIds
 ) {}
