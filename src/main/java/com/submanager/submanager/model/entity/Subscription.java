@@ -1,40 +1,61 @@
 package com.submanager.submanager.model.entity;
 
+import com.submanager.submanager.model.enums.BillingCycle;
+import com.submanager.submanager.model.enums.SubscriptionStatus;
 import jakarta.persistence.*;
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Subscription {
+@Table(name = "subscriptions",
+        indexes = {
+                @Index(name = "idx_sub_account", columnList = "account_id"),
+                @Index(name = "idx_sub_nextRenewal", columnList = "nextRenewalDate")
+        })
+@Getter @Setter
+public class Subscription extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
 
-    private String serviceName;
+    @NotBlank
+    @Column(nullable = false, length = 100)
+    private String name;
 
-    private BigDecimal amount;
+    @NotBlank
+    @Column(nullable = false, length = 100)
+    private String provider;
 
-    private LocalDate paymentDate;
+    @Column(length = 80)
+    private String plan;
 
-    private boolean isPaid;
+    @NotNull
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @NotBlank
+    @Column(nullable = false, length = 10)
+    private String currency;
 
-    private LocalDateTime createdAt;
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 12)
+    private BillingCycle billingCycle;
 
-    @PrePersist
-    public void prePersist() {
-        createdAt = LocalDateTime.now();
-    }
+    private LocalDate nextRenewalDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 12, nullable = false)
+    private SubscriptionStatus status = SubscriptionStatus.ACTIVE;
+
+    private LocalDate lastActivityDate;
+
+    @Column(length = 255)
+    private String notes;
 }
