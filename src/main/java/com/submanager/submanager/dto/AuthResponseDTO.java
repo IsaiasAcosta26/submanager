@@ -1,10 +1,10 @@
 package com.submanager.submanager.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 
-@Getter
+@Data
 @AllArgsConstructor
 public class AuthResponseDTO {
-    private final String token;
+    private String token;
 }
