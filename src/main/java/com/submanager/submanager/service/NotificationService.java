@@ -9,12 +9,14 @@ import com.submanager.submanager.model.enums.NotificationType;
 import com.submanager.submanager.repository.AccountRepository;
 import com.submanager.submanager.repository.NotificationRepository;
 import com.submanager.submanager.repository.SubscriptionRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Service
@@ -48,7 +50,7 @@ public class NotificationService {
                     .orElseThrow(() -> new IllegalArgumentException("subscription no encontrada"));
             if (dueDate != null && repo.existsBySubscription_IdAndTypeAndDueDate(subscriptionId,
                     NotificationType.RENEWAL_REMINDER, dueDate)) {
-                return null; // ya existe para esa fecha (evita duplicados)
+                return null; // ya existe para esa fecha
             }
         }
 
@@ -89,7 +91,6 @@ public class NotificationService {
         return mapper.toDto(n);
     }
 
-    // === NUEVO: Pago recibido ===
     public NotificationDto createPaymentReceived(Long accountId, Long subscriptionId,
                                                  BigDecimal amount, String currency,
                                                  LocalDateTime paidAt,
@@ -100,7 +101,6 @@ public class NotificationService {
                 .orElseThrow(() -> new IllegalArgumentException("subscription no encontrada"));
 
         LocalDate day = (paidAt != null ? paidAt.toLocalDate() : LocalDate.now());
-        // evita duplicar la misma notificación el mismo día para esa suscripción
         if (repo.existsBySubscription_IdAndTypeAndDueDate(subscriptionId, NotificationType.PAYMENT_RECEIVED, day)) {
             return null;
         }
@@ -120,12 +120,11 @@ public class NotificationService {
         n.setType(NotificationType.PAYMENT_RECEIVED);
         n.setTitle(title);
         n.setMessage(msg.toString());
-        n.setDueDate(day); // usamos el día del pago para deduplicar
+        n.setDueDate(day);
         repo.save(n);
         return mapper.toDto(n);
     }
 
-    // === NUEVO: Pago fallido (opcional) ===
     public NotificationDto createPaymentFailed(Long accountId, Long subscriptionId,
                                                BigDecimal amount, String currency,
                                                LocalDateTime paidAt, String errorMsg) {
@@ -162,6 +161,32 @@ public class NotificationService {
         var st = (status != null) ? status : NotificationStatus.PENDING;
         return repo.findByAccount_IdAndStatusOrderByCreatedAtDesc(accountId, st)
                 .stream().map(mapper::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<NotificationDto> list(Long accountId, NotificationStatus status, Integer limit) {
+        var st = (status != null) ? status : NotificationStatus.PENDING;
+        if (limit == null || limit <= 0) return list(accountId, st);
+        var page = repo.findByAccount_IdAndStatus(accountId, st, PageRequest.of(0, limit));
+        return page.getContent().stream().map(mapper::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public long unreadCount(Long accountId) {
+        return repo.countByAccount_IdAndStatus(accountId, NotificationStatus.PENDING);
+    }
+
+    public int markAllAsRead(Long accountId) {
+        return repo.bulkUpdateStatus(accountId, NotificationStatus.PENDING, NotificationStatus.READ);
+    }
+
+    public int deleteAllRead(Long accountId) {
+        return repo.bulkDeleteByStatus(accountId, NotificationStatus.READ);
+    }
+
+    public int markManyAsRead(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return 0;
+        return repo.bulkUpdateStatusByIds(ids, NotificationStatus.READ);
     }
 
     public void markAsRead(Long id) {

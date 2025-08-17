@@ -16,19 +16,44 @@ public class NotificationController {
     private final NotificationService service;
     public NotificationController(NotificationService service) { this.service = service; }
 
-    // Listar notificaciones por cuenta (status opcional: PENDING | READ)
+    // Listar (status opcional) + límite opcional
     @GetMapping
     public List<NotificationDto> list(
             @RequestParam @NotNull Long accountId,
-            @RequestParam(required = false) NotificationStatus status
+            @RequestParam(required = false) NotificationStatus status,
+            @RequestParam(required = false) Integer limit
     ) {
-        return service.list(accountId, status);
+        return service.list(accountId, status, limit);
     }
 
-    // Marcar como leída
+    // Contador de no leídas
+    @GetMapping("/count")
+    public long unreadCount(@RequestParam @NotNull Long accountId) {
+        return service.unreadCount(accountId);
+    }
+
+    // Marcar una como leída (ya lo tenías)
     @PatchMapping("/{id}/read")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void markRead(@PathVariable Long id) {
         service.markAsRead(id);
+    }
+
+    // NUEVO: Marcar todas como leídas
+    @PatchMapping("/read-all")
+    public int markAllRead(@RequestParam @NotNull Long accountId) {
+        return service.markAllAsRead(accountId);
+    }
+
+    // NUEVO: Marcar varias por IDs
+    @PatchMapping("/read")
+    public int markManyRead(@RequestBody List<Long> ids) {
+        return service.markManyAsRead(ids);
+    }
+
+    // NUEVO: Borrar todas las leídas
+    @DeleteMapping("/read")
+    public int deleteRead(@RequestParam @NotNull Long accountId) {
+        return service.deleteAllRead(accountId);
     }
 }
