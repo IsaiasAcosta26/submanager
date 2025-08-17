@@ -1,74 +1,40 @@
 package com.submanager.submanager.model.entity;
 
-import com.submanager.submanager.model.enums.BillingCycle;
-import com.submanager.submanager.model.enums.SubscriptionStatus;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Set;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "subscriptions",
-        indexes = {
-                @Index(name = "idx_sub_account", columnList = "account_id"),
-                @Index(name = "idx_sub_nextRenewal", columnList = "nextRenewalDate")
-        })
-@Getter @Setter
-public class Subscription extends BaseEntity {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Subscription {
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @NotBlank
-    @Column(nullable = false, length = 100)
-    private String name;
+    private String serviceName;
 
-    @NotBlank
-    @Column(nullable = false, length = 100)
-    private String provider;
+    private BigDecimal amount;
 
-    @Column(length = 80)
-    private String plan;
+    private LocalDate paymentDate;
 
-    @NotNull
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal price;
+    private boolean isPaid;
 
-    @NotBlank
-    @Column(nullable = false, length = 10)
-    private String currency;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 12)
-    private BillingCycle billingCycle;
+    private LocalDateTime createdAt;
 
-    private LocalDate nextRenewalDate;
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 12, nullable = false)
-    private SubscriptionStatus status = SubscriptionStatus.ACTIVE;
-
-    private LocalDate lastActivityDate;
-
-    @Column(length = 255)
-    private String notes;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private Category category;
-
-    @ManyToMany
-    @JoinTable(
-            name = "subscription_tags",
-            joinColumns = @JoinColumn(name = "subscription_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
-    private Set<Tag> tags;
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+    }
 }
